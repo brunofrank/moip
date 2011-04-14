@@ -1,0 +1,10 @@
+development: &development
+  developer: true
+  return_to: "/invoices/confirmation"
+  base: "http://localhost:3000"
+
+test:
+  <<: *development
+
+production:
+  email: user@example.com

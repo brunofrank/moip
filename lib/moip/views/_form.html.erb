@@ -1,0 +1,11 @@
+<% form_tag Moip.gateway_url, :class => "moip", "accept-charset" => "ISO-8859-1" do %>
+	<div>
+		<%= hidden_field_tag "id_carteira", options[:email] || Moip.config["email"] %>
+		<%= hidden_field_tag "id_transacao", order.id %>
+		<%= hidden_field_tag "nome", order.product_name %>		
+		<%= hidden_field_tag "descricao", order.product_description %>		
+		<%= hidden_field_tag "valor", order.total %>
+		
+		<%= submit_tag options[:submit] %>
+	</div>
+<% end %>

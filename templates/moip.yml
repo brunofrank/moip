@@ -1,0 +1,11 @@
+development: &development
+  developer: true
+  base: "http://localhost:3000"
+  return_to: "/pedido/efetuado"
+  email: user@example.com
+
+test:
+  <<: *development
+
+production:
+  email: user@example.com
