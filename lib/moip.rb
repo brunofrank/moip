@@ -19,6 +19,7 @@ module Moip
   # PagSeguro receives all invoices in this URL. If developer mode is enabled,
   # then the URL will be /moip_developer/invoice
   GATEWAY_URL = "https://www.moip.com.br/PagamentoMoIP.do"
+  GATEWAY_SANDBOX_URL = "https://desenvolvedor.moip.com.br/sandbox/PagamentoMoIP.do"  
   
   # Hold the config/moip.yml contents
   @@config = nil
@@ -105,4 +106,4 @@ module Moip
   class MissingConfigurationException < StandardError; end
 end
 
-PagSeguro.init!
+Moip.init!

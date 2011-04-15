@@ -80,7 +80,26 @@ module Moip
     # sanitizing the return to symbols
     def mapping_for(name)
       params[MAPPING[name]]
-    end
+    end    
+
+    private
+      def each_value(hash, &blk)
+        hash.each do |key, value|
+          if value.kind_of?(Hash)
+            hash[key] = each_value(value, &blk)
+          else
+            hash[key] = blk.call value
+          end
+        end
+
+        hash
+      end
+
+      # Convert amount format to float
+      def to_price(amount)
+        amount.to_s.gsub(/[^\d]/, "").gsub(/^(\d+)(\d{2})$/, '\1.\2').to_f
+      end
+
 
   end
 end

@@ -2,8 +2,8 @@
 	<div>
 		<%= hidden_field_tag "id_carteira", options[:email] || Moip.config["email"] %>
 		<%= hidden_field_tag "id_transacao", order.id %>
-		<%= hidden_field_tag "nome", order.product_name %>		
-		<%= hidden_field_tag "descricao", order.product_description %>		
+		<% puts order.products.inspect %>
+		<%= hidden_field_tag "nome", "#{order.products.size} - #{order.products[0][:description]}" %>
 		<%= hidden_field_tag "valor", order.total %>
 		
 		<%= submit_tag options[:submit] %>
