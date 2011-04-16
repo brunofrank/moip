@@ -17,11 +17,7 @@ COMO USAR
 
 O primeiro passo é instalar o plugin. Para isso, basta executar o comando abaixo na raíz de seu projeto.
 
-	script/plugin install git://github.com/fnando/moip.git
-
-Se for utilizar o modo de desenvolvimento também precisará da gem Faker:
-
-	sudo gem install faker
+	script/plugin install git://github.com/brunofrank/moip.git
 
 Depois de instalar o plugin, você precisará executar a rake abaixo; ela irá gerar o arquivo `config/moip.yml`.
 
@@ -30,20 +26,16 @@ Depois de instalar o plugin, você precisará executar a rake abaixo; ela irá g
 O arquivo de configuração gerado será parecido com isto:
 
 	development: &development
-	  developer: true
-	  base: "http://localhost:3000"
-	  return_to: "/pedido/efetuado"
+	  sandbox: true
 	  email: user@example.com
 
 	test:
 	  <<: *development
 
 	production:
-	  authenticity_token: 9CA8D46AF0C6177CB4C23D76CAF5E4B0
 	  email: user@example.com
-	  return_to: "/pedido/efetuado"
 
-Este plugin possui um modo de desenvolvimento que permite simular a realização de pedidos e envio de notificações; basta utilizar a opção `developer`. Ela é ativada por padrão nos ambientes de desenvolvimento e teste. Você deve configurar as opções `base`, que deverá apontar para o seu servidor e a URL de retorno, que deverá ser configurada no próprio [Moip](https://www.moip.com.br/), na página <https://www.moip.com.br/AdmMainMenuMyData.do?method=transactionnotification>.
+Este plugin possui um modo sandbox que permite simular vendas; basta utilizar a opção `developer`. Ela é ativada por padrão nos ambientes de desenvolvimento e teste. Você deve configurar as opções `base`, que deverá apontar para o seu servidor e a URL de retorno, que deverá ser configurada no próprio [Moip](https://www.moip.com.br/), na página <https://www.moip.com.br/AdmMainMenuMyData.do?method=transactionnotification>, para isso você deve fazer o cadastro no [MoIP Sandbox](http://desenvolvedor.moip.com.br/sandbox/)
 
 Para o ambiente de produção, que irá efetivamente enviar os dados para o [Moip](https://www.moip.com.br), você precisará adicionar o e-mail cadastrado como vendedor.
 
@@ -63,7 +55,7 @@ Para montar o seu formulário, você deverá utilizar a classe `Moip::Order`. Es
 	    # adicionando os produtos do pedido ao objeto do formulário
 	    @invoice.products.each do |product|
 	      # Estes são os atributos necessários. Por padrão, peso (:weight) é definido para 0,
-		  # quantidade é definido como 1 e frete (:shipping) é definido como 0.
+		    # quantidade é definido como 1 e frete (:shipping) é definido como 0.
 	      @order.add :id => product.id, :price => product.price, :description => product.title
 	    end
 	  end
@@ -89,12 +81,11 @@ Por padrão, o formulário é enviado para o email no arquivo de configuração.
 Toda vez que o status de pagamento for alterado, o [MOIP](http://www.moip.com.br) irá notificar sua URL de retorno com diversos dados. Você pode interceptar estas notificações com o método `moip_notification`. O bloco receberá um objeto da class `Moip::Notification` e só será executado se for uma notificação verificada junto ao [MOIP](http://www.moip.com.br).
 
 	class CartController < ApplicationController
-	  skip_before_filter :verify_authenticity_token
 
 	  def confirm
 	    return unless request.post?
 
-		pagseguro_notification do |notification|
+		moip_notification do |notification|
 		  # Aqui você deve verificar se o pedido possui os mesmos produtos
 		  # que você cadastrou. O produto só deve ser liberado caso o status
 		  # do pedido seja "completed" ou "approved"
@@ -104,46 +95,14 @@ Toda vez que o status de pagamento for alterado, o [MOIP](http://www.moip.com.br
 	  end
 	end
 
-O método `pagseguro_notification` também pode receber como parâmetro o `authenticity_token` que será usado pra verificar a autenticação.
-
-	class CartController < ApplicationController
-	  skip_before_filter :verify_authenticity_token
-
-	  def confirm
-	    return unless request.post?
-		# Se você receber pagamentos de contas diferentes, pode passar o
-		# authenticity_token adequado como parâmetro para pagseguro_notification
-		account = Account.find(params[:seller_id])
-		pagseguro_notification(account.authenticity_token) do |notification|
-		end
-
-		render :nothing => true
-	  end
-	end
 
 O objeto `notification` possui os seguintes métodos:
 
-* `PagSeguro::Notification#products`: Lista de produtos enviados na notificação.
-* `PagSeguro::Notification#shipping`: Valor do frete
-* `PagSeguro::Notification#status`: Status do pedido
-* `PagSeguro::Notification#payment_method`: Tipo de pagamento
-* `PagSeguro::Notification#processed_at`: Data e hora da transação
-* `PagSeguro::Notification#buyer`: Dados do comprador
-* `PagSeguro::Notification#valid?(force=false)`: Verifica se a notificação é válido, confirmando-a junto ao PagSeguro. A resposta é jogada em cache e pode ser forçada com `PagSeguro::Notification#valid?(:force)`
+* `Moip::Notification#products`: Lista de produtos enviados na notificação.
+* `Moip::Notification#status`: Status do pedido
+* `Moip::Notification#payment_method`: Tipo de pagamento
+* `Moip::Notification#buyer`: Dados do comprador
 
-**ATENÇÃO:** Não se esqueça de adicionar `skip_before_filter :verify_authenticity_token` ao controller que receberá a notificação; caso contrário, uma exceção será lançada.
-
-### Utilizando modo de desenvolvimento
-
-Toda vez que você enviar o formulário no modo de desenvolvimento, um arquivo YAML será criado em `tmp/pagseguro-#{RAILS_ENV}.yml`. Esse arquivo conterá todos os pedidos enviados.
-
-Depois, você será redirecionado para a URL de retorno que você configurou no arquivo `config/pagseguro.yml`. Para simular o envio de notificações, você deve utilizar a rake `pagseguro:notify`.
-
-	$ rake pagseguro:notify ID=<id do pedido>
-
-O ID do pedido deve ser o mesmo que foi informado quando você instanciou a class `PagSeguro::Order`. Por padrão, o status do pedido será `completed` e o tipo de pagamento `credit_card`. Você pode especificar esses parâmetros como o exemplo abaixo.
-
-	$ rake pagamento:notify ID=1 PAYMENT_METHOD=invoice STATUS=canceled NOTE="Enviar por motoboy" NAME="José da Silva"
 
 #### PAYMENT_METHOD
 
@@ -164,15 +123,12 @@ O ID do pedido deve ser o mesmo que foi informado quando você instanciou a clas
 AUTOR:
 ------
 
-Nando Vieira (<http://simplesideias.com.br>)
+Bruno Frank Silva Cordeiro
 
-Recomendar no [Working With Rails](http://www.workingwithrails.com/person/7846-nando-vieira)
+NOTA:
+----
 
-COLABORADORES:
---------------
-
-* Elomar (<http://github.com/elomar>)
-* Rafael (<http://github.com/rafaels>)
+Este plugin é uma adaptação do [PagSeguro](https://github.com/fnando/pagseguro) do [Nando Vieira](http://simplesideias.com.br) 
 
 LICENÇA:
 --------

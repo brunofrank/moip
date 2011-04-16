@@ -1,7 +1,6 @@
 development: &development
-  developer: true
-  return_to: "/invoices/confirmation"
-  base: "http://localhost:3000"
+  sandbox: true
+  email: user@example.com
 
 test:
   <<: *development

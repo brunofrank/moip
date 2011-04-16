@@ -7,7 +7,7 @@ class Net::HTTP
   end
 end
 
-describe PagSeguro::Rake do
+describe Moip::Rake do
   before(:each) do
     # First, copy file from spec/fixtures/moip-test.yml 
     # to tmp/moip-test.yml
@@ -31,7 +31,7 @@ describe PagSeguro::Rake do
     # Set the order id
     ENV["ID"] = "ABC"
     
-    PagSeguro::Rake.run
+    Moip::Rake.run
   end
   
   it "should ping return URL with default arguments" do

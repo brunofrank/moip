@@ -1,7 +1,5 @@
 development: &development
-  developer: true
-  base: "http://localhost:3000"
-  return_to: "/pedido/efetuado"
+  sandbox: true
   email: user@example.com
 
 test:
